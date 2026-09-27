@@ -1,23 +1,59 @@
-"""Scanner HLR (Home Location Register) — À CONFIGURER.
+"""Scanner HLR / Lookup — OPTIONNEL (service payant).
 
-Le HLR est LA donnée la plus utile pour un enquêteur :
-- le numéro est-il actif en ce moment ?
-- est-il en itinérance (roaming), et sur quel réseau ?
+Utilise Twilio Lookup v2 : type de ligne, nom de l'opérateur, validité.
+Activation : remplir la section "twilio" de config.json (account_sid + auth_token,
+console sur https://console.twilio.com). Coût : quelques centimes par requête.
 
-C'est un service PAYANT (ex. : Twilio Lookup, Veriphone, API HLR dédiées).
-Aucune source gratuite et fiable n'existe. Prévoir un budget par requête
-(quelques centimes d'euro/USD par numéro selon le fournisseur).
-
-Tant qu'aucune clé API n'est configurée, le scanner reste désactivé.
+C'est la donnée la plus proche d'un vrai HLR accessible sans partenariat opérateur.
 """
 
-NOM = "HLR"
-DESCRIPTION = "interrogation du registre HLR : ligne active, itinérance (service payant)"
-STATUT = "a_configurer"
+NOM = "HLR / Lookup"
+DESCRIPTION = "Twilio Lookup v2 : type de ligne, opérateur, validité (service payant)"
 
 
 def scanner(info_numero):
-    return {
-        "statut": "a_configurer",
-        "resume": "Service payant (Twilio Lookup, Veriphone…). Aucune clé API configurée.",
-    }
+    from triage509 import config as cfg
+
+    conf = cfg.charger().get("twilio", {})
+    sid, token = conf.get("account_sid"), conf.get("auth_token")
+    if not sid or not token:
+        return {
+            "statut": "non_configuré",
+            "resume": "Optionnel — ajouter account_sid/auth_token Twilio dans config.json (service payant).",
+        }
+    try:
+        return _lookup(info_numero["e164"], sid, token)
+    except Exception as exc:
+        return {"statut": "erreur", "resume": f"Échec Lookup : {exc}"}
+
+
+def _lookup(e164, sid, token):
+    import base64
+    import json
+    import urllib.request
+
+    url = (f"https://lookups.twilio.com/v2/PhoneNumbers/{e164}"
+           "?Fields=line_type_intelligence")
+    identifiants = base64.b64encode(f"{sid}:{token}".encode()).decode()
+    requete = urllib.request.Request(url, headers={
+        "Authorization": f"Basic {identifiants}",
+        "User-Agent": "triage-509",
+    })
+    try:
+        with urllib.request.urlopen(requete, timeout=20) as reponse:
+            donnees = json.loads(reponse.read().decode())
+    except Exception as exc:
+        if hasattr(exc, "code") and exc.code == 401:
+            return {"statut": "erreur", "resume": "Clés Twilio rejetées (401) — vérifiez config.json."}
+        raise
+
+    lti = donnees.get("line_type_intelligence", {}) or {}
+    morceaux = []
+    if donnees.get("valid") is not None:
+        morceaux.append("valide" if donnees["valid"] else "invalide")
+    if lti.get("type"):
+        morceaux.append(f"ligne {lti['type']}")
+    if lti.get("carrier_name"):
+        morceaux.append(f"opérateur {lti['carrier_name']}")
+    resume = "Twilio Lookup : " + (", ".join(morceaux) if morceaux else "réponse vide")
+    return {"statut": "ok", "resume": resume + "."}

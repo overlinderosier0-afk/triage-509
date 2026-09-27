@@ -3,3 +3,6 @@ __pycache__/
 *.pyc
 data/audit.jsonl
 rapports/
+config.json
+*.session
+*.session-journal

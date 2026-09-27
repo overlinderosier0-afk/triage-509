@@ -1,29 +1,21 @@
-"""Scanner WhatsApp — À CONFIGURER.
+"""Scanner WhatsApp — vérification MANUELLE (pas d'API publique).
 
-Ce qu'il faut savoir honnêtement :
-- Il n'existe PAS d'API publique WhatsApp pour vérifier si un numéro
-  possède un compte. Les méthodes existantes (vérification via l'écran
-  d'inscription, bibliothèques non officielles) violent les conditions
-  d'utilisation et font bannir les comptes utilisés.
-- La méthode manuelle légitime : ouvrir https://wa.me/<numéro> dans un
-  navigateur et voir si une conversation peut être initiée.
-
-Piste d'implémentation propre : utiliser l'API WhatsApp Business officielle
-(compte vérifié requis) — coûteuse et réservée aux entreprises.
-
-Tant que ce scanner n'est pas configuré proprement, il reste désactivé :
-mieux vaut un outil honnête qu'un outil qui triche et se fait bannir.
+Il n'existe pas d'API WhatsApp permettant de vérifier proprement si un numéro
+possède un compte ; les méthodes automatisées violent les conditions
+d'utilisation et font bannir les comptes. Ce scanner fournit donc le lien
+de vérification manuelle : si https://wa.me/<numéro> ouvre une conversation,
+le numéro est inscrit sur WhatsApp.
 """
 
 NOM = "WhatsApp"
-DESCRIPTION = "vérification de l'existence d'un compte WhatsApp lié au numéro"
-STATUT = "a_configurer"
+DESCRIPTION = "vérification manuelle de l'existence d'un compte WhatsApp"
 
 
 def scanner(info_numero):
+    numero = info_numero["e164"].replace("+", "")
     return {
-        "statut": "a_configurer",
-        "resume": "Vérification manuelle : ouvrir https://wa.me/{} dans un navigateur.".format(
-            info_numero["e164"].replace("+", "")
-        ),
+        "statut": "manuel",
+        "resume": (f"Ouvrir https://wa.me/{numero} : si une conversation peut "
+                   "être initiée, le numéro a WhatsApp. (Pas d'automatisation "
+                   "possible sans violer les CGU.)"),
     }

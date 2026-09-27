@@ -1,10 +1,12 @@
-"""Registre des scanners complémentaires.
+"""Registre des scanners complémentaires (tous optionnels).
 
-Chaque scanner est un module exposant :
-  NOM, DESCRIPTION, STATUT ("actif" ou "a_configurer") et scanner(info_numero) -> dict.
+Chaque module expose NOM, DESCRIPTION et scanner(info_numero) -> dict.
+Le module décide lui-même s'il est configuré : s'il ne l'est pas, il
+retourne un statut 'non_configuré' avec la marche à suivre. Rien n'est
+obligatoire — un scanner non configuré n'empêche jamais l'analyse.
 """
 
-from . import whatsapp, telegram, hlr
+from . import hlr, telegram, whatsapp
 
 SCANNERS = {
     "whatsapp": whatsapp,
@@ -14,17 +16,11 @@ SCANNERS = {
 
 
 def executer(info_numero):
-    """Exécute les scanners actifs et retourne {nom: resultat}."""
+    """Exécute chaque scanner et retourne {nom: resultat}."""
     resultats = {}
     for nom, module in SCANNERS.items():
-        if module.STATUT == "actif":
-            try:
-                resultats[nom] = module.scanner(info_numero)
-            except Exception as exc:  # un scanner ne doit jamais faire planter l'analyse
-                resultats[nom] = {"statut": "erreur", "resume": f"Échec du scanner : {exc}"}
-        else:
-            resultats[nom] = {
-                "statut": module.STATUT,
-                "resume": f"Non configuré — {module.DESCRIPTION}",
-            }
+        try:
+            resultats[nom] = module.scanner(info_numero)
+        except Exception as exc:  # un scanner ne doit jamais faire planter l'analyse
+            resultats[nom] = {"statut": "erreur", "resume": f"Échec du scanner : {exc}"}
     return resultats

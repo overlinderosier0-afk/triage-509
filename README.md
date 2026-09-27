@@ -27,9 +27,20 @@ auprès de l'opérateur**. Tout outil qui prétend le faire autrement est malhon
 - L'opérateur détecté est **probable** : la portabilité des numéros et les
   réattributions de blocs depuis 2017 peuvent fausser le résultat. Le rapport
   l'indique explicitement.
-- Les scanners WhatsApp / Telegram / HLR sont documentés mais **désactivés** :
-  WhatsApp n'a pas d'API publique de vérification, Telegram exige des identifiants
-  API officiels, le HLR est un service payant. Voir `triage509/scanners/`.
+- Les scanners complémentaires sont **optionnels** : WhatsApp reste manuel (pas
+  d'API publique), Telegram s'active avec des identifiants API officiels,
+  le Lookup HLR est un service payant. Voir la section « Scanners
+  complémentaires » ci-dessus.
+
+## Scanners complémentaires (tous optionnels)
+
+| Scanner | Statut | Activation |
+|---|---|---|
+| WhatsApp | Vérification manuelle | Aucune — le rapport donne le lien `wa.me` à ouvrir (pas d'API publique, l'automatisation ferait bannir le compte) |
+| Telegram | Désactivé par défaut | `cp config.example.json config.json`, remplir `api_id`/`api_hash` ([my.telegram.org](https://my.telegram.org)), `pip install telethon`. Première utilisation : connexion interactive dans le terminal |
+| HLR / Lookup | Désactivé par défaut | Remplir `account_sid`/`auth_token` Twilio dans `config.json` — **service payant** (quelques centimes/requête) |
+
+`config.json` est personnel et ignoré par git : ne le commitez jamais.
 
 ## Installation
 
